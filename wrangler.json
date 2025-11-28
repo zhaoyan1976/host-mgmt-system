@@ -1,0 +1,9 @@
+{
+  "name": "host-mgmt-system",
+  "compatibility_date": "2025-11-28",
+  "kv_namespaces": [
+    { "binding": "HOSTS_DB", "id": "HOSTS_DB" },
+    { "binding": "USERS_DB", "id": "USERS_DB" }
+  ],
+  "routes": []
+}
