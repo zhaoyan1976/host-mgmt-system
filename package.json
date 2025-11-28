@@ -7,6 +7,9 @@
     "build": "vite build",
     "preview": "vite preview --port 5174"
   },
+  "engines": {
+  "node": ">=18"
+  }，
   "dependencies": {
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
