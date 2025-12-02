@@ -1,9 +1,16 @@
 {
   "name": "host-mgmt-system",
-  "compatibility_date": "2025-11-28",
+  "compatibility_date": "2025-01-01",
+  "pages_build_output_dir": "dist",
   "kv_namespaces": [
-    { "binding": "HOSTS_DB", "id": "HOSTS_DB" },
-    { "binding": "USERS_DB", "id": "USERS_DB" }
-  ],
-  "routes": []
+    {
+      "binding": "HOSTS_DB",
+      "id": "94af3bef789c489bab39733b4a60388f"
+    },
+    {
+      "binding": "USERS_DB",
+      "id": "d3f286609b634e1c87a2413d52be446c"
+    }
+  ]
 }
+
