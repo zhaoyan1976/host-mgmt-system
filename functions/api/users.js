@@ -1,6 +1,11 @@
 export async function onRequest(context) {
   const { request, env } = context;
 
+  const initial = {
+      username: "admin",
+      password: "123"
+    };
+
   if (request.method === "GET") {
     const list = await env.USERS_DB.list();
     const users = [];
