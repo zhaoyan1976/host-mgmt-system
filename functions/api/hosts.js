@@ -14,7 +14,7 @@ export async function onRequest(context) {
     }
 
     // 关键路径 —— JSON 必须放在 functions/api/data 下
-    const initial = await import("./data/inital_hosts.json");
+    const initial = await import("./data/initial_hosts.json");
 
     for (const item of initial.default) {
       await env.HOSTS_DB.put(item.public_ip, JSON.stringify(item));
