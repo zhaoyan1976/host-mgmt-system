@@ -3,7 +3,7 @@ export async function onRequest(context) {
   const url = new URL(request.url);
 
   // ============ 初始化 /api/hosts/init ============
-  if (url.pathname.endsWith("/init") && request.method === "POST") {
+  if ((url.pathname === "/api/hosts/init" || url.pathname.endsWith("/init")) && request.method === "POST") {
     const existing = await env.HOSTS_DB.list();
 
     if (existing.keys.length > 0) {
@@ -78,5 +78,5 @@ export async function onRequest(context) {
   }
 
   // 其它方法不允许
-  return new Response("Method Not Allowed", { status: 405 });
+  return new Response(`Method Not Allowed. Path: ${url.pathname}, Method: ${request.method}`, { status: 405 });
 }
