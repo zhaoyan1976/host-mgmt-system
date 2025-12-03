@@ -13,11 +13,25 @@ export async function onRequest(context) {
       );
     }
 
-    // 关键路径 —— JSON 必须放在 functions/api/data 下
-    const initial = await import("./data/initial_hosts.json");
+    // 关键路径 —— 从 GitHub 获取 JSON 数据
+    const response = await fetch('https://raw.githubusercontent.com/zhaoyan1976/host-mgmt-system/main/functions/api/data/initial_hosts.json');
+    const initial = await response.json();
 
-    for (const item of initial.default) {
-      await env.HOSTS_DB.put(item.public_ip, JSON.stringify(item));
+    for (const item of initial) {
+      // 映射中文字段到前端期望的英文字段
+      const mappedItem = {
+        public_ip: item["主机公网IP 【必填】"],
+        hostname: item["主机公网IP 【必填】"], // 使用IP作为hostname
+        ip: item["主机公网IP 【必填】"],
+        owner: item["第一联系人姓名 【必填】"],
+        email: item["第一联系人邮箱 【必填】"],
+        department: item["用户单位名称 【必填】"],
+        status: item["运行 状态"],
+        os: "Unknown", // 默认值
+        cabinet_location: "",
+        description: `客户经理: ${item["客户经理"] || ""}`
+      };
+      await env.HOSTS_DB.put(mappedItem.public_ip, JSON.stringify(mappedItem));
     }
 
     return new Response(
