@@ -14,7 +14,7 @@ export default function Dashboard({ user, onLogout }) {
     const q = s ? `?sort=${s}` : '';
     const res = await fetch(`/api/hosts${q}`, { headers: { Authorization: `Bearer ${token}` }});
     const j = await res.json();
-    if (j.hosts) setHosts(j.hosts);
+    setHosts(Array.isArray(j) ? j : j.hosts || []);
   }
 
   const saveHost = async (h) => {
