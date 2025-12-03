@@ -4,12 +4,16 @@ export default function Login({ onLogin }) {
   const [u, setU] = useState('');
   const [p, setP] = useState('');
   const [loading, setLoading] = useState(false);
-  const API = '';
+
+  // Use production API in development, or configure for local wrangler
+  const apiBase = import.meta.env.DEV
+    ? 'https://host-mgmt-system.pages.dev'
+    : '';
 
   const doLogin = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/login`, {
+      const res = await fetch(`${apiBase}/api/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: u, password: p })

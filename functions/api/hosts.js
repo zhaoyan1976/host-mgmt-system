@@ -2,6 +2,19 @@ export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
 
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400'
+      }
+    });
+  }
+
   // ============ 初始化 /api/hosts/init ============
   if (url.pathname.includes("/init") && request.method === "POST") {
     try {
@@ -56,15 +69,37 @@ export async function onRequest(context) {
 
   // ============ GET /api/hosts 读取所有 ============
   if (request.method === "GET") {
-    const list = await env.HOSTS_DB.list();
-    const items = [];
+    try {
+      const list = await env.HOSTS_DB.list();
+      const items = [];
 
-    for (const entry of list.keys) {
-      const value = await env.HOSTS_DB.get(entry.name);
-      items.push(JSON.parse(value));
+      console.log('Database keys found:', list.keys.length);
+
+      for (const entry of list.keys) {
+        const value = await env.HOSTS_DB.get(entry.name);
+        if (value) {
+          items.push(JSON.parse(value));
+        }
+      }
+
+      console.log('Returning items:', items.length);
+
+      return new Response(JSON.stringify(items), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        }
+      });
+    } catch (error) {
+      console.error('Error in GET /api/hosts:', error);
+      return new Response(JSON.stringify({ error: 'Internal server error' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
     }
-
-    return new Response(JSON.stringify(items), { status: 200 });
   }
 
   // ============ POST /api/hosts 新增或更新 ============

@@ -6,20 +6,56 @@ export default function Dashboard({ user, onLogout }) {
   const [hosts, setHosts] = useState([]);
   const [sort, setSort] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [initializing, setInitializing] = useState(false);
   const token = localStorage.getItem('token');
+
+  // Use production API in development, or configure for local wrangler
+  const apiBase = import.meta.env.DEV
+    ? 'https://host-mgmt-system.pages.dev'
+    : '';
 
   useEffect(()=> { fetchHosts(); }, []);
 
   async function fetchHosts(s) {
-    const q = s ? `?sort=${s}` : '';
-    const res = await fetch(`/api/hosts${q}`, { headers: { Authorization: `Bearer ${token}` }});
-    const j = await res.json();
-    setHosts(Array.isArray(j) ? j : j.hosts || []);
+    try {
+      const q = s ? `?sort=${s}` : '';
+      const res = await fetch(`${apiBase}/api/hosts${q}`, { headers: { Authorization: `Bearer ${token}` }});
+
+      if (!res.ok) {
+        console.error('API Error:', res.status, res.statusText);
+        const errorText = await res.text();
+        console.error('Error response:', errorText);
+        setHosts([]);
+        return;
+      }
+
+      const responseText = await res.text();
+      console.log('Raw API Response:', responseText);
+
+      if (!responseText || responseText.trim() === '') {
+        console.warn('Empty response from API');
+        setHosts([]);
+        return;
+      }
+
+      try {
+        const j = JSON.parse(responseText);
+        console.log('Parsed API Response:', j);
+        setHosts(Array.isArray(j) ? j : j.hosts || []);
+      } catch (parseError) {
+        console.error('JSON Parse Error:', parseError);
+        console.error('Response text that failed to parse:', responseText);
+        setHosts([]);
+      }
+    } catch (error) {
+      console.error('Fetch error:', error);
+      setHosts([]);
+    }
   }
 
   const saveHost = async (h) => {
     const method = h.id ? 'PUT' : 'POST';
-    await fetch(`/api/hosts`, {
+    await fetch(`${apiBase}/api/hosts`, {
       method,
       headers: { 'Content-Type':'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify(h)
@@ -30,13 +66,38 @@ export default function Dashboard({ user, onLogout }) {
 
   const delHost = async (id) => {
     if (!confirm('确认删除该记录？')) return;
-    await fetch(`/api/hosts?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` }});
+    await fetch(`${apiBase}/api/hosts?id=${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` }});
     fetchHosts(sort);
   };
 
   const exportCsv = () => {
     // open worker CSV route
-    window.open(`/api/hosts/export`);
+    window.open(`${apiBase}/api/hosts/export`);
+  };
+
+  const initializeDatabase = async () => {
+    try {
+      setInitializing(true);
+      const res = await fetch(`${apiBase}/api/hosts/init`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        alert(`初始化失败: ${errorText}`);
+        return;
+      }
+
+      const result = await res.json();
+      alert(`初始化成功: ${result.msg}`);
+      fetchHosts(); // 重新获取数据
+    } catch (error) {
+      console.error('Initialization error:', error);
+      alert('初始化过程中发生错误');
+    } finally {
+      setInitializing(false);
+    }
   };
 
   return (
@@ -62,11 +123,27 @@ export default function Dashboard({ user, onLogout }) {
 
         <div className="ml-auto flex gap-2">
           {user.role === 'admin' && <button onClick={()=>setEditing({})} className="px-3 py-1 bg-green-600 text-white rounded">新增</button>}
+          {user.role === 'admin' && (
+            <button
+              onClick={initializeDatabase}
+              disabled={initializing}
+              className="px-3 py-1 bg-yellow-600 text-white rounded disabled:opacity-50"
+            >
+              {initializing ? '初始化中...' : '初始化数据库'}
+            </button>
+          )}
           <button onClick={exportCsv} className="px-3 py-1 bg-indigo-600 text-white rounded">导出 CSV</button>
         </div>
       </div>
 
       {editing && <div className="mb-4"><HostForm host={editing} onSave={saveHost} onCancel={()=>setEditing(null)} /></div>}
+
+      {hosts.length === 0 && (
+        <div className="text-center py-8 text-gray-500">
+          <p>暂无数据</p>
+          <p className="text-sm mt-2">如果这是第一次使用，请点击"初始化数据库"按钮来加载数据</p>
+        </div>
+      )}
 
       <HostTable hosts={hosts} onEdit={h=>setEditing(h)} onDelete={delHost} isAdmin={user.role==='admin'} />
     </div>
