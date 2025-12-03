@@ -18,13 +18,23 @@ export async function onRequest(context) {
   // ============ 初始化 /api/hosts/init ============
   if (url.pathname.includes("/init") && request.method === "POST") {
     try {
+      // 检查是否强制重新初始化
+      const force = url.searchParams.get('force') === 'true';
+
       const existing = await env.HOSTS_DB.list();
 
-      if (existing.keys.length > 0) {
+      if (existing.keys.length > 0 && !force) {
         return new Response(
-          JSON.stringify({ ok: false, msg: "数据库非空，无法初始化" }),
+          JSON.stringify({ ok: false, msg: "数据库非空，无法初始化。如需强制重新初始化，请使用 /api/hosts/init?force=true" }),
           { status: 400, headers: { 'Content-Type': 'application/json' } }
         );
+      }
+
+      // 如果强制重新初始化，先清空数据库
+      if (force && existing.keys.length > 0) {
+        for (const entry of existing.keys) {
+          await env.HOSTS_DB.delete(entry.name);
+        }
       }
 
       // 关键路径 —— 从 GitHub 获取 JSON 数据
