@@ -1,6 +1,24 @@
-export async function onRequestPost(context) {
+export async function onRequest(context) {
   const { request, env } = context;
   const url = new URL(request.url);
+
+  // Handle CORS preflight requests
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Max-Age': '86400'
+      }
+    });
+  }
+
+  // 只处理 POST 请求
+  if (request.method !== 'POST') {
+    return new Response('Method Not Allowed', { status: 405 });
+  }
 
   try {
     // 检查是否强制重新初始化
@@ -11,7 +29,13 @@ export async function onRequestPost(context) {
     if (existing.keys.length > 0 && !force) {
       return new Response(
         JSON.stringify({ ok: false, msg: "数据库非空，无法初始化。如需强制重新初始化，请使用 /api/hosts/init?force=true" }),
-        { status: 400, headers: { 'Content-Type': 'application/json' } }
+        { 
+          status: 400, 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          } 
+        }
       );
     }
 
@@ -91,7 +115,13 @@ export async function onRequestPost(context) {
   } catch (error) {
     return new Response(
       JSON.stringify({ ok: false, msg: `初始化失败: ${error.message}` }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      { 
+        status: 500, 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        } 
+      }
     );
   }
 }
