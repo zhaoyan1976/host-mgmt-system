@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview --port 5174"
+    "preview": "vite preview --port 5174",
+    "prepare-kv": "node import-initial-data-to-kv.js"
   },
   "engines": {
   "node": ">=18"
